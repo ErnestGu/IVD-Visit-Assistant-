@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>拜访助手 · IVD 测试版</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --ink: #0f1923;
+    --ink-soft: #3d4f5c;
+    --ink-faint: #8a9baa;
+    --surface: #f4f6f8;
+    --card: #ffffff;
+    --accent: #0066ff;
+    --accent-soft: #e8f0ff;
+    --accent-glow: rgba(0,102,255,0.15);
+    --success: #00b87a;
+    --success-soft: #e0f7f0;
+    --warn: #ff6b35;
+    --warn-soft: #fff0eb;
+    --border: #e2e8ed;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Auth Gate ── */
+  #authGate {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+  }
+  .auth-card {
+    background: #1a2b3c;
+    border-radius: var(--radius);
+    padding: 36px 28px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+  .auth-logo {
+    width: 56px; height: 56px;
+    background: var(--accent);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 20px;
+  }
+  .auth-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .auth-sub {
+    font-size: 13px;
+    color: var(--ink-faint);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+  .auth-input {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-size: 18px;
+    font-family: inherit;
+    color: #fff;
+    outline: none;
+    text-align: center;
+    letter-spacing: 4px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .auth-input:focus { border-color: var(--accent); }
+  .auth-input::placeholder { letter-spacing: 0; color: rgba(255,255,255,0.3); font-size: 14px; }
+  .auth-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .auth-btn:active { opacity: 0.85; }
+  .auth-error {
+    font-size: 13px;
+    color: #ff6b6b;
+    margin-top: 10px;
+    display: none;
+  }
+  .auth-badge {
+    display: inline-block;
+    background: rgba(0,102,255,0.2);
+    color: #6aa3ff;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Main App (hidden until authed) ── */
+  #mainApp { display: none; }
+
+  /* ── Header ── */
+  .header {
+    background: var(--ink);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-text {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.5px;
+  }
+  .header-tag {
+    background: rgba(255,107,53,0.25);
+    color: #ff9a6c;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 20px; animation: fadeUp 0.3s ease; }
+  .page.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Home page ── */
+  .welcome-card {
+    background: linear-gradient(135deg, #0f1923 0%, #1a3a5c 100%);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .welcome-card::before {
+    content: '';
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(0,102,255,0.3) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .welcome-greeting { font-size: 13px; color: #6aa3ff; margin-bottom: 6px; font-weight: 500; }
+  .welcome-title { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 16px; }
+  .welcome-title span { color: #4d9fff; }
+  .stats-row { display: flex; gap: 12px; }
+  .stat-item {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-num { font-size: 22px; font-weight: 700; color: #fff; }
+  .stat-label { font-size: 11px; color: #6aa3ff; margin-top: 2px; }
+
+  /* ── Action buttons ── */
+  .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .action-btn {
+    background: var(--card);
+    border: none;
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .action-btn:active { transform: scale(0.97); box-shadow: none; }
+  .action-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+  .action-label { font-size: 15px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 4px; }
+  .action-desc { font-size: 12px; color: var(--ink-faint); line-height: 1.4; }
+  .action-btn.primary { background: var(--accent); }
+  .action-btn.primary .action-label { color: #fff; }
+  .action-btn.primary .action-desc { color: rgba(255,255,255,0.7); }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-faint);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .record-list { display: flex; flex-direction: column; gap: 10px; }
+  .record-card {
+    background: var(--card);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .record-card:active { transform: scale(0.99); }
+  .record-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .record-hospital { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .record-date { font-size: 12px; color: var(--ink-faint); }
+  .record-contact { font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; }
+  .record-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+  .tag-blue { background: var(--accent-soft); color: var(--accent); }
+  .tag-green { background: var(--success-soft); color: var(--success); }
+  .tag-orange { background: var(--warn-soft); color: var(--warn); }
+
+  /* ── Input page ── */
+  .page-title { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .page-subtitle { font-size: 14px; color: var(--ink-faint); margin-bottom: 24px; line-height: 1.5; }
+
+  .input-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .input-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .input-label .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+  textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    resize: none;
+    outline: none;
+    background: var(--surface);
+    line-height: 1.6;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); background: #fff; }
+  textarea::placeholder { color: var(--ink-faint); }
+
+  .voice-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+  }
+  .voice-hint-text { font-size: 12px; color: var(--accent); line-height: 1.4; }
+
+  .example-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s;
+    margin-top: 8px;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.99); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.15s;
+  }
+  .btn-secondary:active { background: var(--surface); }
+
+  /* ── Loading ── */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,35,0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    backdrop-filter: blur(4px);
+  }
+  .loading-card { background: var(--card); border-radius: var(--radius); padding: 32px 40px; text-align: center; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .loading-sub { font-size: 13px; color: var(--ink-faint); }
+
+  /* ── Result page ── */
+  .result-header {
+    background: linear-gradient(135deg, #00b87a, #0066ff);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .result-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .result-header-text h2 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+  .result-header-text p { font-size: 13px; color: rgba(255,255,255,0.8); }
+  .result-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .result-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-section-title .icon { font-size: 16px; }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--surface);
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { font-size: 13px; color: var(--ink-faint); flex-shrink: 0; width: 80px; }
+  .info-val { font-size: 14px; color: var(--ink); font-weight: 500; text-align: right; flex: 1; }
+  .highlight-box {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .highlight-box p { font-size: 14px; color: var(--ink); line-height: 1.6; }
+  .highlight-box.warn { background: var(--warn-soft); border-color: var(--warn); }
+  .highlight-box.success { background: var(--success-soft); border-color: var(--success); }
+  .action-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--surface);
+  }
+  .action-item:last-child { border-bottom: none; }
+  .action-check {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .action-check.checked { background: var(--success); border-color: var(--success); color: #fff; font-size: 12px; }
+  .action-text { font-size: 14px; color: var(--ink); line-height: 1.5; flex: 1; }
+  .script-box { background: var(--ink); border-radius: var(--radius-sm); padding: 16px; position: relative; }
+  .script-text { font-size: 14px; color: #c8d8e8; line-height: 1.7; }
+  .script-text strong { color: #6aa3ff; }
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #6aa3ff;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .copy-btn:active { opacity: 0.7; }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: opacity 0.15s;
+  }
+  .nav-item:active { opacity: 0.6; }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--ink-faint); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--accent); }
+  .page-wrapper { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+
+  /* ── Settings ── */
+  .setup-card {
+    background: linear-gradient(135deg, #fff8e8, #fff3d4);
+    border: 1.5px solid #ffd166;
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .setup-title { font-size: 14px; font-weight: 700; color: #b8860b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .setup-text { font-size: 13px; color: #8b6914; line-height: 1.5; margin-bottom: 12px; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    outline: none;
+    background: #fff;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--accent); }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-faint); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; line-height: 1.6; }
+
+  /* ── Feedback Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,35,0.65);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 998;
+    backdrop-filter: blur(3px);
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-card {
+    background: var(--card);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 28px 24px 36px;
+    width: 100%;
+    max-width: 480px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--ink-faint); margin-bottom: 22px; line-height: 1.5; }
+  .stars-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .star-btn {
+    width: 48px; height: 48px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .star-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    transform: scale(1.1);
+  }
+  .star-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding: 0 4px;
+  }
+  .star-label { font-size: 11px; color: var(--ink-faint); }
+  .feedback-textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    resize: none;
+    outline: none;
+    background: var(--surface);
+    line-height: 1.6;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+  }
+  .feedback-textarea:focus { border-color: var(--accent); background: #fff; }
+  .modal-skip {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 10px;
+    margin-top: 4px;
+  }
+
+  /* ── Feishu status toast ── */
+  .toast {
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 20px;
+    z-index: 9997;
+    white-space: nowrap;
+    animation: toastIn 0.3s ease;
+    pointer-events: none;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH GATE ══ -->
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-logo">🔬</div>
+    <div class="auth-badge">测试版 · 内部邀请</div>
+    <div class="auth-title">IVD 拜访助手</div>
+    <div class="auth-sub">请输入你收到的访问码<br>继续体验 AI 拜访记录功能</div>
+    <input class="auth-input" type="password" id="tokenInput" placeholder="输入访问码" maxlength="20"
+      onkeydown="if(event.key==='Enter') verifyToken()" />
+    <button class="auth-btn" onclick="verifyToken()">进入 →</button>
+    <div class="auth-error" id="authError">访问码不正确，请确认后重试</div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="mainApp">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-mark">🔬</div>
+        <div>
+          <div class="logo-text">拜访助手</div>
+          <div class="logo-sub">IVD SALES AI</div>
+        </div>
+      </div>
+      <div class="header-tag">TEST v1</div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay" style="display:none">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div class="loading-text">AI 正在分析拜访内容</div>
+      <div class="loading-sub">通常需要 10~20 秒</div>
+    </div>
+  </div>
+
+  <!-- Page: Home -->
+  <div class="page page-wrapper active" id="pageHome">
+    <div class="welcome-card">
+      <div class="welcome-greeting">👋 今天也要拿下它</div>
+      <div class="welcome-title">告别手写记录<br><span>让AI帮你复盘每次拜访</span></div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-num" id="statCount">0</div>
+          <div class="stat-label">拜访记录</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">30+</div>
+          <div class="stat-label">分钟节省/次</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">AI</div>
+          <div class="stat-label">智能分析</div>
+        </div>
+      </div>
+    </div>
+    <div class="action-grid">
+      <button class="action-btn primary" onclick="showPage('pageInput'); setNav('nav-input')">
+        <span class="action-icon">✍️</span>
+        <span class="action-label">记录拜访</span>
+        <span class="action-desc">语音或文字，AI自动整理</span>
+      </button>
+      <button class="action-btn" onclick="showPage('pageRecords'); setNav('nav-records')">
+        <span class="action-icon">📋</span>
+        <span class="action-label">查看记录</span>
+        <span class="action-desc">历史拜访一览</span>
+      </button>
+    </div>
+    <div class="section-title">最近拜访</div>
+    <div class="record-list" id="homeRecordList">
+      <div class="empty-state">
+        <div class="empty-icon">🏥</div>
+        <div class="empty-text">还没有拜访记录<br>点击「记录拜访」开始使用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Input -->
+  <div class="page page-wrapper" id="pageInput">
+    <div class="page-title">记录拜访</div>
+    <div class="page-subtitle">用自然语言描述今天的拜访，AI 帮你整理成结构化记录</div>
+    <div class="input-card">
+      <div class="input-label"><span class="dot"></span>拜访内容描述</div>
+      <textarea id="visitInput" rows="7" placeholder="例如：今天下午去了仁济医院检验科，见了李主任。他说最近在试用竞品迈瑞的试剂，价格比我们低15%，但反映批间差偏大。我介绍了我们的质控方案，他比较感兴趣，同意下周安排技术交流..."></textarea>
+      <div class="voice-hint">
+        <span>💡</span>
+        <span class="voice-hint-text">直接说你记得的，不用整理格式。医院名、联系人、关键信息、下一步计划——说出来就行</span>
+      </div>
+      <div class="example-chips">
+        <div class="chip" onclick="fillExample(1)">竞品竞争场景</div>
+        <div class="chip" onclick="fillExample(2)">新客户开发</div>
+        <div class="chip" onclick="fillExample(3)">集采影响沟通</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="submitBtn" onclick="submitVisit()">🤖 AI 生成拜访记录</button>
+    <button class="btn-secondary" onclick="showPage('pageHome'); setNav('nav-home')">返回首页</button>
+  </div>
+
+  <!-- Page: Result -->
+  <div class="page page-wrapper" id="pageResult">
+    <div id="resultContent"></div>
+    <button class="btn-primary" onclick="showPage('pageInput'); setNav('nav-input')">继续记录下一次拜访</button>
+    <button class="btn-secondary" onclick="showPage('pageHome'); setNav('nav-home')">返回首页</button>
+  </div>
+
+  <!-- Page: Records -->
+  <div class="page page-wrapper" id="pageRecords">
+    <div class="page-title">拜访记录</div>
+    <div class="page-subtitle">所有拜访记录（存储在本设备）</div>
+    <div class="record-list" id="allRecordList">
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">暂无记录</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Settings -->
+  <div class="page page-wrapper" id="pageSettings">
+    <div class="page-title">设置</div>
+    <div class="page-subtitle">测试版信息</div>
+    <div class="input-card">
+      <div style="font-size:14px; color:var(--ink-soft); line-height:1.7">
+        <p><strong>IVD 拜访助手</strong> · 测试版 v1</p>
+        <p style="margin-top:8px">专为 IVD 医疗器械销售设计的 AI 工作助手，帮助你从繁琐的手工记录中解放出来。</p>
+        <p style="margin-top:8px; color:var(--ink-faint)">你的拜访记录存储在本设备，同时会向研发团队发送匿名结构化摘要用于产品改进。</p>
+        <div class="divider"></div>
+        <p style="color:var(--ink-faint); font-size:12px">测试员 ID：<span id="testerIdDisplay" style="color:var(--accent)">-</span></p>
+        <p style="color:var(--ink-faint); font-size:12px; margin-top:4px">本次会话记录数：<span id="sessionCountDisplay" style="color:var(--accent)">0</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="showPage('pageHome'); setNav('nav-home')">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">首页</div>
+    </div>
+    <div class="nav-item" id="nav-input" onclick="showPage('pageInput'); setNav('nav-input')">
+      <div class="nav-icon">✍️</div>
+      <div class="nav-label">记录</div>
+    </div>
+    <div class="nav-item" id="nav-records" onclick="showPage('pageRecords'); setNav('nav-records')">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">历史</div>
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('pageSettings'); setNav('nav-settings')">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">设置</div>
+    </div>
+  </div>
+
+</div><!-- end #mainApp -->
+
+<!-- ══ FEEDBACK MODAL ══ -->
+<div id="feedbackModal" style="display:none">
+  <div class="modal-overlay" onclick="closeFeedbackOnOverlay(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">📊 这次分析准确吗？</div>
+      <div class="modal-sub">你已记录了 <span id="feedbackCountLabel"></span> 条拜访，花 30 秒评价一下帮助我们改进</div>
+      <div class="stars-row" id="starsRow">
+        <button class="star-btn" data-val="1" onclick="selectStar(1)" title="很不准确">😟</button>
+        <button class="star-btn" data-val="2" onclick="selectStar(2)" title="一般">😐</button>
+        <button class="star-btn" data-val="3" onclick="selectStar(3)" title="还不错">🙂</button>
+        <button class="star-btn" data-val="4" onclick="selectStar(4)" title="很准确">😊</button>
+        <button class="star-btn" data-val="5" onclick="selectStar(5)" title="非常准确">🤩</button>
+      </div>
+      <div class="star-label-row">
+        <span class="star-label">很不准确</span>
+        <span class="star-label">非常准确</span>
+      </div>
+      <textarea class="feedback-textarea" id="feedbackText" rows="3" placeholder="哪里准确？哪里有偏差？有什么建议？（可选）"></textarea>
+      <button class="btn-primary" onclick="submitFeedback()">提交反馈</button>
+      <button class="modal-skip" onclick="closeFeedback()">跳过，稍后再说</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG — replace these two values
+// ══════════════════════════════════════════
+const VALID_TOKEN = '123456';
+const DEEPSEEK_API_KEY = 'sk-4c31aa8d15d149efbeabb365a11b36cf'; // ← 替换为你的 DeepSeek API Key
+const FEISHU_WEBHOOK = 'https://open.feishu.cn/open-apis/bot/v2/hook/052aa6d8-d16c-4423-833f-18ffe89c835b';  // ← 替换为你的飞书机器人 Webhook URL
+//飞书机器人 Webhook 的获取方法：群设置 → 机器人 → 添加机器人 → 自定义机器人 → 复制 Webhook 地址。
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let records = JSON.parse(localStorage.getItem('ivd_records') || '[]');
+let testerId = sessionStorage.getItem('ivd_tester_id') || null;
+let selectedStar = 0;
+let sessionCount = 0;
+
+// ══════════════════════════════════════════
+//  AUTH — Token Gate
+// ══════════════════════════════════════════
+function verifyToken() {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (val === VALID_TOKEN) {
+    sessionStorage.setItem('ivd_authed', '1');
+    // Generate tester ID from token + timestamp for anonymous tracking
+    testerId = 'T-' + VALID_TOKEN + '-' + Date.now().toString(36).slice(-4).toUpperCase();
+    sessionStorage.setItem('ivd_tester_id', testerId);
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('testerIdDisplay').textContent = testerId;
+    renderHomeRecords();
+  } else {
+    const err = document.getElementById('authError');
+    err.style.display = 'block';
+    document.getElementById('tokenInput').style.borderColor = '#ff6b6b';
+    setTimeout(() => {
+      err.style.display = 'none';
+      document.getElementById('tokenInput').style.borderColor = 'rgba(255,255,255,0.12)';
+    }, 2500);
+  }
+}
+
+// Check if already authed this session
+(function() {
+  if (sessionStorage.getItem('ivd_authed') === '1') {
+    testerId = sessionStorage.getItem('ivd_tester_id');
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('testerIdDisplay').textContent = testerId || '-';
+  }
+})();
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  window.scrollTo(0, 0);
+  if (pageId === 'pageRecords') renderAllRecords();
+  if (pageId === 'pageHome') renderHomeRecords();
+  if (pageId === 'pageSettings') {
+    document.getElementById('sessionCountDisplay').textContent = sessionCount;
+  }
+}
+
+function setNav(activeId) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(activeId).classList.add('active');
+}
+
+// ══════════════════════════════════════════
+//  EXAMPLE FILLS
+// ══════════════════════════════════════════
+function fillExample(n) {
+  const examples = {
+    1: `今天下午去了仁济医院检验科，见了李主任。他说最近在试用竞品迈瑞的试剂，价格比我们低15%左右。他反映迈瑞的批间差偏大，有几个项目结果不稳定。我介绍了我们的全程质控方案和24小时响应服务，他比较感兴趣。约好下周三下午安排一次技术交流，让我们带最新的室间质评数据过去。`,
+    2: `今天第一次拜访了松江区中心医院检验科，接待我的是王技师。医院目前日检量大概800单，主要用的是罗氏设备，试剂也是罗氏配套。王技师说他们对现有供应商基本满意，但提到罗氏售后响应有时候慢。我重点介绍了我们的快速响应机制，留了产品资料。他说可以跟科主任汇报一下，让我下个月再来跟进。`,
+    3: `今天去浦东新区人民医院，跟采购部门的陈主任沟通集采相关事宜。他问我们这次集采中标的产品线和价格体系，我解释了带量采购的执行细则。他关心后续非中标产品怎么处理，我说明了配套试剂可以通过协议采购继续供应。整体沟通顺畅，他说会安排检验科主任一起开个协调会，让我这周内约时间。`
+  };
+  document.getElementById('visitInput').value = examples[n];
+}
+
+// ══════════════════════════════════════════
+//  SUBMIT VISIT
+// ══════════════════════════════════════════
+async function submitVisit() {
+  const input = document.getElementById('visitInput').value.trim();
+  if (!input) { showToast('请先输入拜访内容'); return; }
+
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  document.getElementById('submitBtn').disabled = true;
+
+  try {
+    const result = await callDeepSeek(input);
+    const record = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('zh-CN'),
+      raw: input,
+      testerId: testerId,
+      ...result
+    };
+    records.unshift(record);
+    localStorage.setItem('ivd_records', JSON.stringify(records));
+    sessionCount++;
+    document.getElementById('statCount').textContent = records.length;
+
+    // Send to Feishu
+    sendToFeishu(record);
+
+    renderResult(record);
+    showPage('pageResult');
+    setNav('nav-input');
+    document.getElementById('visitInput').value = '';
+
+    // Trigger feedback modal every 2 records (even numbers)
+    if (records.length % 2 === 0) {
+      setTimeout(() => showFeedbackModal(records.length), 1200);
+    }
+
+  } catch(e) {
+    showToast('AI 分析失败：' + e.message);
+  } finally {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════
+//  DEEPSEEK API
+// ══════════════════════════════════════════
+async function callDeepSeek(visitText) {
+  const systemPrompt = `你是一个专业的IVD（体外诊断）医疗器械销售助手。只返回JSON，不要包含任何其他文字或markdown标记。`;
+  const userPrompt = `请将以下拜访描述整理成结构化的销售记录，以JSON格式返回。
+
+拜访描述：
+${visitText}
+
+返回如下JSON结构：
+{
+  "hospital": "医院名称",
+  "department": "科室",
+  "contact": "联系人姓名和职位",
+  "visitType": "拜访性质（新客户开发/竞品防守/关系维护/集采沟通/技术交流）",
+  "keyFindings": ["关键发现1", "关键发现2"],
+  "opportunity": "商机描述（如无则为空字符串）",
+  "risk": "风险描述（如无则为空字符串）",
+  "nextActions": ["下一步行动1", "下一步行动2"],
+  "suggestedScript": "下次拜访建议开场话术（2-3句，专业自然）",
+  "followUpDate": "建议跟进时间"
+}`;
+
+  const resp = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      stream: false
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json();
+    throw new Error(err.error?.message || `HTTP ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// ══════════════════════════════════════════
+//  FEISHU WEBHOOK
+// ══════════════════════════════════════════
+async function sendToFeishu(record) {
+  if (!FEISHU_WEBHOOK || FEISHU_WEBHOOK === 'YOUR_FEISHU_WEBHOOK_URL') return;
+
+  const findings = (record.keyFindings || []).map(f => `• ${f}`).join('\n');
+  const actions  = (record.nextActions  || []).map(a => `→ ${a}`).join('\n');
+
+  const msg = {
+    msg_type: 'post',
+    content: {
+      post: {
+        'zh_cn': {
+          title: `📋 新拜访记录｜${record.hospital || '未知医院'}`,
+          content: [
+            [{ tag: 'text', text: `🏥 医院：${record.hospital || '-'}　科室：${record.department || '-'}` }],
+            [{ tag: 'text', text: `👤 联系人：${record.contact || '-'}` }],
+            [{ tag: 'text', text: `📌 拜访性质：${record.visitType || '-'}　建议跟进：${record.followUpDate || '-'}` }],
+            [{ tag: 'text', text: `\n💡 关键发现：\n${findings || '—'}` }],
+            [{ tag: 'text', text: `\n✅ 下一步行动：\n${actions || '—'}` }],
+            record.opportunity ? [{ tag: 'text', text: `\n🎯 商机：${record.opportunity}` }] : [{ tag: 'text', text: '' }],
+            record.risk        ? [{ tag: 'text', text: `⚠️ 风险：${record.risk}` }]        : [{ tag: 'text', text: '' }],
+            [{ tag: 'text', text: `\n💬 建议话术：${record.suggestedScript || '-'}` }],
+            [{ tag: 'text', text: `\n─────────────────` }],
+            [{ tag: 'text', text: `🔖 测试员 ID：${record.testerId || '匿名'}　时间：${record.date}` }]
+          ]
+        }
+      }
+    }
+  };
+
+  try {
+    await fetch(FEISHU_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(msg)
+    });
+    showToast('✅ 已同步至飞书');
+  } catch(e) {
+    console.warn('飞书通知发送失败', e);
+  }
+}
+
+// ══════════════════════════════════════════
+//  FEEDBACK MODAL
+// ══════════════════════════════════════════
+function showFeedbackModal(count) {
+  selectedStar = 0;
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('feedbackText').value = '';
+  document.getElementById('feedbackCountLabel').textContent = count;
+  document.getElementById('feedbackModal').style.display = 'block';
+}
+
+function closeFeedback() {
+  document.getElementById('feedbackModal').style.display = 'none';
+}
+
+function closeFeedbackOnOverlay(e) {
+  if (e.target === e.currentTarget) closeFeedback();
+}
+
+function selectStar(val) {
+  selectedStar = val;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.val) === val);
+  });
+}
+
+async function submitFeedback() {
+  if (!selectedStar) { showToast('请先选择一个评分 😊'); return; }
+
+  const feedbackText = document.getElementById('feedbackText').value.trim();
+  const scoreLabel = ['', '很不准确', '一般', '还不错', '很准确', '非常准确'][selectedStar];
+
+  closeFeedback();
+  showToast('感谢你的反馈！🎉');
+
+  // Send feedback to Feishu
+  if (FEISHU_WEBHOOK && FEISHU_WEBHOOK !== 'YOUR_FEISHU_WEBHOOK_URL') {
+    const msg = {
+      msg_type: 'post',
+      content: {
+        post: {
+          'zh_cn': {
+            title: `💬 测试反馈｜${selectedStar}/5 分 · ${scoreLabel}`,
+            content: [
+              [{ tag: 'text', text: `⭐ 评分：${selectedStar}/5（${scoreLabel}）` }],
+              [{ tag: 'text', text: feedbackText ? `📝 描述：${feedbackText}` : '📝 描述：（未填写）' }],
+              [{ tag: 'text', text: `🔖 测试员 ID：${testerId || '匿名'}　累计记录：${records.length} 条` }]
+            ]
+          }
+        }
+      }
+    };
+    try {
+      await fetch(FEISHU_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(msg)
+      });
+    } catch(e) {
+      console.warn('反馈发送失败', e);
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+//  RENDER RESULT
+// ══════════════════════════════════════════
+function renderResult(r) {
+  const visitTypeColor = {
+    '新客户开发': 'tag-blue', '竞品防守': 'tag-orange',
+    '关系维护': 'tag-green', '集采沟通': 'tag-blue', '技术交流': 'tag-green'
+  }[r.visitType] || 'tag-blue';
+
+  const keyFindingsHTML = (r.keyFindings || []).map(f =>
+    `<div class="highlight-box"><p>📌 ${f}</p></div>`
+  ).join('');
+
+  const nextActionsHTML = (r.nextActions || []).map(a =>
+    `<div class="action-item">
+      <div class="action-check" onclick="toggleCheck(this)"></div>
+      <div class="action-text">${a}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('resultContent').innerHTML = `
+    <div class="result-header">
+      <div class="result-icon">✅</div>
+      <div class="result-header-text">
+        <h2>拜访记录已生成</h2>
+        <p>${r.date} · ${r.hospital || '未知医院'}</p>
+      </div>
+    </div>
+    <div class="result-section">
+      <div class="result-section-title"><span class="icon">🏥</span>基本信息</div>
+      <div class="info-row"><span class="info-key">医院</span><span class="info-val">${r.hospital || '-'}</span></div>
+      <div class="info-row"><span class="info-key">科室</span><span class="info-val">${r.department || '-'}</span></div>
+      <div class="info-row"><span class="info-key">联系人</span><span class="info-val">${r.contact || '-'}</span></div>
+      <div class="info-row"><span class="info-key">拜访性质</span><span class="info-val"><span class="tag ${visitTypeColor}">${r.visitType || '-'}</span></span></div>
+      <div class="info-row"><span class="info-key">建议跟进</span><span class="info-val">${r.followUpDate || '-'}</span></div>
+    </div>
+    ${keyFindingsHTML ? `
+    <div class="result-section">
+      <div class="result-section-title"><span class="icon">💡</span>关键发现</div>
+      ${keyFindingsHTML}
+      ${r.opportunity ? `<div class="highlight-box success"><p>🎯 <strong>商机：</strong>${r.opportunity}</p></div>` : ''}
+      ${r.risk ? `<div class="highlight-box warn"><p>⚠️ <strong>风险：</strong>${r.risk}</p></div>` : ''}
+    </div>` : ''}
+    <div class="result-section">
+      <div class="result-section-title"><span class="icon">✅</span>下一步行动</div>
+      ${nextActionsHTML || '<p style="color:var(--ink-faint);font-size:14px">暂无待办</p>'}
+    </div>
+    <div class="result-section">
+      <div class="result-section-title"><span class="icon">💬</span>建议话术</div>
+      <div class="script-box">
+        <button class="copy-btn" onclick="copyScript('${encodeURIComponent(r.suggestedScript || '')}')">复制</button>
+        <div class="script-text">${r.suggestedScript || '-'}</div>
+      </div>
+    </div>
+  `;
+}
+
+function copyScript(encoded) {
+  navigator.clipboard.writeText(decodeURIComponent(encoded)).then(() => showToast('✅ 话术已复制'));
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+// ══════════════════════════════════════════
+//  RENDER LISTS
+// ══════════════════════════════════════════
+function renderHomeRecords() {
+  const container = document.getElementById('homeRecordList');
+  document.getElementById('statCount').textContent = records.length;
+  if (!records.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏥</div><div class="empty-text">还没有拜访记录<br>点击「记录拜访」开始使用</div></div>`;
+    return;
+  }
+  container.innerHTML = records.slice(0, 3).map(r => recordCardHTML(r)).join('');
+}
+
+function renderAllRecords() {
+  const container = document.getElementById('allRecordList');
+  if (!records.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无记录</div></div>`;
+    return;
+  }
+  container.innerHTML = records.map(r => recordCardHTML(r)).join('');
+}
+
+function recordCardHTML(r) {
+  const typeColor = {
+    '新客户开发': 'tag-blue', '竞品防守': 'tag-orange',
+    '关系维护': 'tag-green', '集采沟通': 'tag-blue', '技术交流': 'tag-green'
+  }[r.visitType] || 'tag-blue';
+  return `<div class="record-card" onclick="showDetail(${r.id})">
+    <div class="record-header">
+      <div class="record-hospital">${r.hospital || '未知医院'}</div>
+      <div class="record-date">${r.date}</div>
+    </div>
+    <div class="record-contact">👤 ${r.contact || '-'} · ${r.department || '-'}</div>
+    <div class="record-tags">
+      <span class="tag ${typeColor}">${r.visitType || '-'}</span>
+      ${r.followUpDate ? `<span class="tag tag-blue">跟进：${r.followUpDate}</span>` : ''}
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--ink-faint)">点击查看详情 →</div>
+  </div>`;
+}
+
+function showDetail(id) {
+  const r = records.find(r => r.id === id);
+  if (!r) return;
+  renderResult(r);
+  showPage('pageResult');
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2400);
+}
+
+// ── Init ──
+renderHomeRecords();
+</script>
+</body>
+</html>
